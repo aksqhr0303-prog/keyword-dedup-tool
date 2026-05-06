@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>쉼표 단어 중복 제거 도구</title>
+  <meta name="description" content="쉼표로 구분된 단어 목록에서 완전 일치 및 부분 포함 단어를 자동으로 제거합니다." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #f0ede8;
+      --border: #d8d4cc;
+      --text: #1a1916;
+      --text-muted: #6b6860;
+      --accent: #2c5f2e;
+      --accent-light: #e8f0e8;
+      --coral: #c94f30;
+      --coral-light: #faeae6;
+      --blue: #1e4d8c;
+      --blue-light: #e6edf8;
+      --radius: 10px;
+      --radius-lg: 16px;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+
+    textarea::placeholder { color: var(--text-muted); }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--text);
+      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+    }
+
+    button:hover { background: var(--surface2); }
+    button:active { transform: scale(0.98); }
+
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    button.primary:hover { background: #235225; }
+
+    button.ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border-color: var(--border);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat {
+      background: var(--surface2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .result-text {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+      word-break: break-all;
+      min-height: 60px;
+      white-space: pre-wrap;
+    }
+
+    .copy-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .removed-section { margin-top: 1rem; }
+
+    .removed-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+    .tag {
+      font-size: 12px;
+      padding: 3px 11px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: var(--surface2);
+    }
+
+    .tag.exact {
+      background: var(--coral-light);
+      border-color: #e8a090;
+      color: var(--coral);
+    }
+
+    .tag.partial {
+      background: var(--blue-light);
+      border-color: #8faed4;
+      color: var(--blue);
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .hidden { display: none !important; }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text);
+      color: var(--bg);
+      font-size: 13px;
+      padding: 9px 20px;
+      border-radius: 99px;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .guide {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.8;
+      background: var(--accent-light);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 1.25rem;
+    }
+
+    .guide strong { color: var(--accent); font-weight: 600; }
+
+    @media (max-width: 520px) {
+      header { padding: 1.2rem 1rem; }
+      main { padding: 1.25rem 1rem 3rem; }
+      .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .stat-num { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>쉼표 단어 중복 제거 도구</h1>
+  <p>쉼표(,)로 구분된 단어 목록에서 완전 일치 및 부분 포함 중복 단어를 자동으로 제거합니다.</p>
+</header>
+
+<main>
+  <div class="guide">
+    <strong>제거 규칙</strong><br>
+    ① 완전 일치 단어 제거 &nbsp;|&nbsp; ② 다른 단어 안에 포함된 단어 제거<br>
+    단어 배열이 다른 경우(<em>주방용냄비 / 주방냄비</em>) 및 순서가 뒤바뀐 경우(<em>소형냄비 / 냄비소형</em>)는 <strong>유지</strong>합니다.
+  </div>
+
+  <div class="card">
+    <div class="card-title">입력</div>
+    <textarea id="inp" placeholder="예) 인덕션냄비,주방용품,인덕션냄비,찌개냄비,김치찌개냄비,된장찌개냄비"></textarea>
+    <div class="btn-row">
+      <button class="primary" onclick="run()">중복 제거 실행</button>
+      <button class="ghost" onclick="reset()">초기화</button>
+    </div>
+  </div>
+
+  <div id="result-section" class="hidden">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num" id="cnt-before">0</div>
+        <div class="stat-lbl">입력 단어 수</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="cnt-after">0</div>
+        <div class="stat-lbl">제거 후 단어 수</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="cnt-removed">0</div>
+        <div class="stat-lbl">제거된 단어 수</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">결과</div>
+      <div class="result-text" id="output-text"></div>
+      <div class="copy-row">
+        <button onclick="copyResult()">결과 복사</button>
+      </div>
+
+      <div class="removed-section" id="removed-section">
+        <div class="removed-lbl">제거된 단어</div>
+        <div class="tags" id="removed-tags"></div>
+        <div class="legend">
+          <div class="legend-item"><div class="dot" style="background:var(--coral);"></div> 완전 일치 제거</div>
+          <div class="legend-item"><div class="dot" style="background:var(--blue);"></div> 부분 포함 제거</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-title">사용 예시</div>
+    <div style="font-size:13px; color:var(--text-muted); line-height:2;">
+      <strong style="color:var(--text);">입력:</strong> 조리도구,찌개냄비,조리도구,김치찌개냄비,된장찌개냄비,찌개냄비<br>
+      <strong style="color:var(--text);">결과:</strong> 조리도구,김치찌개냄비,된장찌개냄비<br>
+      <span style="font-size:12px;">→ 중복 <em>조리도구</em> 1개, 상위 포함 <em>찌개냄비</em> 1개 제거</span>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast">클립보드에 복사되었습니다</div>
+
+<script>
+  function run() {
+    const raw = document.getElementById('inp').value.trim();
+    if (!raw) return;
+
+    const words = raw.split(',').map(w => w.trim()).filter(w => w.length > 0);
+    const before = words.length;
+
+    const exactRemoved = [];
+    const seen = new Set();
+    const afterExact = [];
+
+    for (const w of words) {
+      if (seen.has(w)) {
+        exactRemoved.push(w);
+      } else {
+        seen.add(w);
+        afterExact.push(w);
+      }
+    }
+
+    const kept = [];
+    const partialRemoved = [];
+
+    for (let i = 0; i < afterExact.length; i++) {
+      const candidate = afterExact[i];
+      let isSub = false;
+      for (let j = 0; j < afterExact.length; j++) {
+        if (i === j) continue;
+        if (afterExact[j].length > candidate.length && afterExact[j].includes(candidate)) {
+          isSub = true;
+          break;
+        }
+      }
+      if (isSub) partialRemoved.push(candidate);
+      else kept.push(candidate);
+    }
+
+    document.getElementById('cnt-before').textContent = before;
+    document.getElementById('cnt-after').textContent = kept.length;
+    document.getElementById('cnt-removed').textContent = exactRemoved.length + partialRemoved.length;
+    document.getElementById('output-text').textContent = kept.join(',');
+
+    const tagsEl = document.getElementById('removed-tags');
+    tagsEl.innerHTML = '';
+
+    exactRemoved.forEach(w => {
+      const s = document.createElement('span');
+      s.className = 'tag exact';
+      s.textContent = w;
+      tagsEl.appendChild(s);
+    });
+
+    partialRemoved.forEach(w => {
+      const s = document.createElement('span');
+      s.className = 'tag partial';
+      s.textContent = w;
+      tagsEl.appendChild(s);
+    });
+
+    document.getElementById('result-section').classList.remove('hidden');
+  }
+
+  function reset() {
+    document.getElementById('inp').value = '';
+    document.getElementById('result-section').classList.add('hidden');
+  }
+
+  function copyResult() {
+    const text = document.getElementById('output-text').textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => showToast());
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+</script>
+</body>
+</html>
